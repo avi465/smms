@@ -16,6 +16,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Objects;
 import java.util.Scanner;
+import java.util.Stack;
 
 public class Access extends JFrame {
     static String[][] billData = new String[1000][4];
@@ -300,25 +301,6 @@ public class Access extends JFrame {
 
 //        New bill start
         int count = Functions.recordCount("products.txt");
-        String[] productNameData = new String[count];
-        String[] productIdData = new  String[count];
-
-        try {
-            int i = 0;
-            File myObj = new File("products.txt");
-            Scanner myReader = new Scanner(myObj);
-            while (myReader.hasNext()) {
-                String data = myReader.nextLine();
-                String[] token = data.split(",");
-                productNameData[i] = token[0];
-                productIdData[i] = token[1];
-                i++;
-            }
-            myReader.close();
-        } catch (FileNotFoundException exception) {
-            JOptionPane.showMessageDialog(availableStock,"File not found");
-            exception.printStackTrace();
-        }
 
         JLabel newBillTitle = new JLabel("New Bill");
         newBillTitle.setBounds(20,20,360,25);
@@ -329,7 +311,7 @@ public class Access extends JFrame {
         newBillProductNameLabel.setForeground(Color.GRAY);
         newBillProductNameLabel.setFont(new Font("Poppins",Font.PLAIN,14));
 
-        JComboBox newBillProductNameField = new JComboBox(productNameData);
+        JComboBox newBillProductNameField = new JComboBox(new String[]{"---Select---"});
         newBillProductNameField.setBounds(20,85,250,36);
         newBillProductNameField.setFont(new Font("Poppins",Font.PLAIN,14));
         newBillProductNameField.setBackground(Color.WHITE);
@@ -383,45 +365,47 @@ public class Access extends JFrame {
         newBillAddButton.addActionListener(e ->{
             float price = 0;
             float quantity = 0;
-            if(newBillProductQuantityField.getText().equals("")){
+            if (newBillProductNameField.getSelectedIndex() == 0){
+                JOptionPane.showMessageDialog(newBillPanel,"Please select item","Select item",JOptionPane.WARNING_MESSAGE);
+            }else if(newBillProductQuantityField.getText().equals("")){
                 JOptionPane.showMessageDialog(newBillPanel,"Enter quantity","Enter quantity",JOptionPane.WARNING_MESSAGE);
             }else {
                 quantity = Float.parseFloat(newBillProductQuantityField.getText());
-            }
-            try {
-                File myObj = new File("products.txt");
-                Scanner myReader = new Scanner(myObj);
-                while (myReader.hasNext()) {
-                    String data = myReader.nextLine();
-                    String[] token = data.split(",");
-                    if(((String)newBillProductNameField.getSelectedItem()).equals(token[0])){
-                        price = Float.parseFloat(token[2]);
+                try {
+                    File myObj = new File("products.txt");
+                    Scanner myReader = new Scanner(myObj);
+                    while (myReader.hasNext()) {
+                        String data = myReader.nextLine();
+                        String[] token = data.split(",");
+                        if(((String)newBillProductNameField.getSelectedItem()).equals(token[0])){
+                            price = Float.parseFloat(token[2]);
+                        }
                     }
+                    myReader.close();
+                } catch (FileNotFoundException exception) {
+                    JOptionPane.showMessageDialog(availableStock,"File not found");
+                    exception.printStackTrace();
                 }
-                myReader.close();
-            } catch (FileNotFoundException exception) {
-                JOptionPane.showMessageDialog(availableStock,"File not found");
-                exception.printStackTrace();
-            }
-            if(quantity != 0.0){
-                tableModel.insertRow(tableModel.getRowCount(), new Object[] { (String)newBillProductNameField.getSelectedItem(),
-                        price,
-                        newBillProductQuantityField.getText(),
-                        price*quantity
-                });
-                billData[noOfBillDataRow][0] = (String)newBillProductNameField.getSelectedItem();
-                billData[noOfBillDataRow][1] = Float.toString(price);
-                billData[noOfBillDataRow][2] = newBillProductQuantityField.getText();
-                billData[noOfBillDataRow][3] = Float.toString(price*quantity);
-                noOfBillDataRow++;
-            }
-            String[] data = newBillTotalLabel.getText().split(":");
-            float total = Float.parseFloat(data[1]);
-            total = total+(price*quantity);
-            newBillTotalLabel.setText("Total: "+String.valueOf(total));
+                if(quantity != 0.0){
+                    tableModel.insertRow(tableModel.getRowCount(), new Object[] { (String)newBillProductNameField.getSelectedItem(),
+                            price,
+                            newBillProductQuantityField.getText(),
+                            price*quantity
+                    });
+                    billData[noOfBillDataRow][0] = (String)newBillProductNameField.getSelectedItem();
+                    billData[noOfBillDataRow][1] = Float.toString(price);
+                    billData[noOfBillDataRow][2] = newBillProductQuantityField.getText();
+                    billData[noOfBillDataRow][3] = Float.toString(price*quantity);
+                    noOfBillDataRow++;
+                }
+                String[] data = newBillTotalLabel.getText().split(":");
+                float total = Float.parseFloat(data[1]);
+                total = total+(price*quantity);
+                newBillTotalLabel.setText("Total: "+String.valueOf(total));
 
-            newBillProductNameField.setSelectedIndex(0);
-            newBillProductQuantityField.setText("");
+                newBillProductNameField.setSelectedIndex(0);
+                newBillProductQuantityField.setText("");
+            }
         });
 
         JButton newBillButton = new JButton("Create bill");
@@ -435,7 +419,7 @@ public class Access extends JFrame {
             newBillInfo();
         });
 
-        JButton newBillClearButton = new JButton("New bill");
+        JButton newBillClearButton = new JButton("Clear");
         newBillClearButton.setBounds(20,510,250,32);
         newBillClearButton.setFont(new Font("Poppins",Font.PLAIN,14));
         newBillClearButton.setBackground(Color.BLACK);
@@ -471,6 +455,13 @@ public class Access extends JFrame {
             tableModel.setRowCount(0);
             newBillProductQuantityField.setText("");
             newBillProductNameField.setSelectedIndex(0);
+
+            newBillProductNameField.removeAllItems();
+            newBillProductNameField.addItem("---Select---");
+            String[] productNameData = Functions.getColumnData("products.txt",0);
+            for (int i = 0;i < Functions.recordCount("products.txt");i++){
+                newBillProductNameField.addItem(productNameData[i]);
+            }
         });
 //        New bill ends
 
@@ -574,6 +565,11 @@ public class Access extends JFrame {
                 myWriter.write(name + "," + id + "," + price + "," + stock + "\n");
                 myWriter.close();
                 JOptionPane.showMessageDialog(addProductPanel,"Product added");
+
+                productNameField.setText("");
+                productIdField.setText("");
+                productPriceField.setText("");
+                productStockField.setText("");
             } catch (IOException exception) {
                 JOptionPane.showMessageDialog(addProduct,"Error adding product");
                 exception.printStackTrace();
@@ -583,27 +579,31 @@ public class Access extends JFrame {
 
 //        Available stock start
         String[] stockColumnName = {"Product", "Id", "Price", "Stock"};
-        String[][] stockData = Functions.fileData("products.txt",4);
 
+        JLabel availableStockTitle = new JLabel("Available Stock");
+        availableStockTitle.setBounds(20,20,360,25);
+        availableStockTitle.setFont(new Font("Poppins",Font.BOLD,20));
 
-        Color color = UIManager.getColor ( "availableStockPanel.background" );
-        JTable availableStockTable = new JTable(stockData,stockColumnName);
+        DefaultTableModel availableStockTableModel = new DefaultTableModel();
+        availableStockTableModel.addColumn("Product");
+        availableStockTableModel.addColumn("Product Id");
+        availableStockTableModel.addColumn("Price");
+        availableStockTableModel.addColumn("Stock");
+
+        JTable availableStockTable = new JTable(availableStockTableModel);
         availableStockTable.getTableHeader().setFont(new Font("Poppins",Font.PLAIN,14));
         availableStockTable.setFont(new Font("Poppins",Font.PLAIN,14));
-        availableStockTable.setBackground(color);
         availableStockTable.setShowGrid(false);
-        availableStockTable.setRowHeight(newBillTable.getRowHeight() + 6);
-        DefaultTableCellRenderer availableStockTabledefaultHeaderRenderer = (DefaultTableCellRenderer) newBillTable.getTableHeader().getDefaultRenderer();
-        availableStockTabledefaultHeaderRenderer.setHorizontalAlignment(JLabel.LEFT);
-        availableStockTable.getTableHeader().setDefaultRenderer(availableStockTabledefaultHeaderRenderer);
-        final DefaultTableCellRenderer availableStockTablerenderer = new DefaultTableCellRenderer();
-        availableStockTablerenderer.setBorder(null);
-        availableStockTable.getTableHeader().setDefaultRenderer(availableStockTablerenderer);
+        availableStockTable.setRowHeight(availableStockTable.getRowHeight() + 10);
+        DefaultTableCellRenderer availableStockHeaderRenderer = (DefaultTableCellRenderer) availableStockTable.getTableHeader().getDefaultRenderer();
+        availableStockHeaderRenderer.setHorizontalAlignment(JLabel.LEFT);
+        availableStockTable.getTableHeader().setDefaultRenderer(availableStockHeaderRenderer);
+        final DefaultTableCellRenderer availableStockRenderer = new DefaultTableCellRenderer();
+        availableStockRenderer.setBorder(null);
+        availableStockTable.getTableHeader().setDefaultRenderer(availableStockRenderer);
 
         JScrollPane availableStockScrollPane = new JScrollPane(availableStockTable);
-        availableStockScrollPane.setBounds(20,20,567,560);
-        availableStockScrollPane.setBorder(BorderFactory.createEmptyBorder());
-
+        availableStockScrollPane.setBounds(20,65,545,450);
 
         availableStock.setFont(new Font("Poppins",Font.PLAIN,14));
         availableStock.setBackground(Color.BLACK);
@@ -618,6 +618,17 @@ public class Access extends JFrame {
             updateStockPanel.setVisible(false);
             salesPanel.setVisible(false);
             aboutPanel.setVisible(false);
+
+            availableStockTableModel.setRowCount(0);
+            String[][] stockData = Functions.fileData("products.txt",4);
+            for (int i = 0; i < Functions.recordCount("products.txt");i++){
+                availableStockTableModel.insertRow(availableStockTableModel.getRowCount(), new Object[] {
+                        stockData[i][0],
+                        stockData[i][1],
+                        stockData[i][2],
+                        stockData[i][3]
+                });
+            }
         });
 
 //        Available stock end
@@ -632,7 +643,7 @@ public class Access extends JFrame {
         updateStockProductIdLabel.setForeground(Color.GRAY);
         updateStockProductIdLabel.setFont(new Font("Poppins",Font.PLAIN,14));
 
-        JComboBox updateStockProductIdField = new JComboBox(productIdData);
+        JComboBox updateStockProductIdField = new JComboBox(new String[]{"---Select---"});
         updateStockProductIdField.setBounds(20,85,250,36);
         updateStockProductIdField.setFont(new Font("Poppins",Font.PLAIN,14));
         updateStockProductIdField.setBackground(Color.WHITE);
@@ -700,6 +711,12 @@ public class Access extends JFrame {
             updateStockDeleteButton.setEnabled(false);
             updateStockUpdateButton.setEnabled(false);
 
+            updateStockProductIdField.removeAllItems();
+            updateStockProductIdField.addItem("---Select---");
+            String[] productIdData = Functions.getColumnData("products.txt",1);
+            for (int i = 0;i < Functions.recordCount("products.txt");i++){
+                updateStockProductIdField.addItem(productIdData[i]);
+            }
         });
 
         updateStockDeleteButton.setBounds(20,365,250,36);
@@ -859,7 +876,7 @@ public class Access extends JFrame {
 //        Update stock end
 
 //        Sales start
-        String[] salesSearchByFieldData = {"Select","Bill No","Customer Name","Phone NO"};
+        String[] salesSearchByFieldData = {"---Select---","Bill No","Customer Name","Phone NO"};
 
         JLabel salesTitle = new JLabel("Sales");
         salesTitle.setBounds(20,20,360,25);
@@ -1042,15 +1059,17 @@ public class Access extends JFrame {
         aboutTextPane.setFont(new Font("Poppins",Font.PLAIN,14));
         aboutTextPane.setMargin(new Insets(20, 20, 20, 20));
         aboutTextPane.setEditable(false);
-        aboutTextPane.setText("We declare that this project report titled “CRICKET SCORECARD \n" +
-                "SYSTEM” submitted in partial fulfillment of the degree of B. Tech in \n" +
-                "Computer Science and Engineering is a record of original work \n" +
-                "carried out by me under the supervision of Ashutosh Soni and \n" +
-                "Pragya Jha, and has not formed the basis for the award of anyother \n" +
-                "degree or diploma, in this or any other Institution or University.\n" +
-                "In keeping with the ethical practice in reporting scientific \n" +
-                "information, due acknowledgements have been made wherever the \n" +
-                "findings of others have been cited");
+        aboutTextPane.setText("OUR TEAM\n\n" +
+                "AVINASH CHANDRA KARMJIT\n"+
+                "PRAVEEN KUMAR YADAV\n" +
+                "ALOK KUMAR MISHRA\n" +
+                "SK. IMRAN\n" +
+                "MD. SAMA\n" +
+                "AROSHI PATTANAIK\n" +
+                "AKASH KUMAR SAHOO\n" +
+                "AREEB NAWAZ\n" +
+                "SHIVAM RASMI MUDULI\n" +
+                "AYUSH SAHA\n");
 //        About end
 
         signOut.setFont(new Font("Poppins",Font.PLAIN,14));
@@ -1099,6 +1118,7 @@ public class Access extends JFrame {
         addProductPanel.add(addProductButton);
         addProductPanel.add(addProductClearButton);
 
+        availableStockPanel.add(availableStockTitle);
         availableStockPanel.add(availableStockScrollPane);
 
         newBillPanel.add(newBillTitle);
@@ -1156,10 +1176,6 @@ public class Access extends JFrame {
         this.setVisible(true);
     }
 
-    public static String[][] data(){
-        String[][] data = billData;
-        return data;
-    }
 
     public static void newBillInfo(){
         float total = 0;

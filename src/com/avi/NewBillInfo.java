@@ -56,9 +56,6 @@ public class NewBillInfo extends JFrame {
         JScrollPane customerInfoScrollPane = new JScrollPane(customerInfoTable);
         customerInfoScrollPane.setBounds(20,140,510,350);
 
-        String[][] billData = Access.data();
-//        tableModel.insertRow(tableModel.getRowCount(), new Object[] {billData[0][0],billData[0][1],billData[0][2],billData[0][3]});
-
         JButton saveButton = new JButton("Save");
         saveButton.setBounds(20,510,250,36);
         saveButton.setFont(new Font("Poppins",Font.PLAIN,14));
