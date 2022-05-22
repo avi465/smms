@@ -1,0 +1,3 @@
+Dettol,DET09,100,134
+Milk,MLK34,45,220
+Cofee,CF23,87,32
