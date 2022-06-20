@@ -3,7 +3,6 @@ package com.avi;
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -21,6 +20,7 @@ import java.util.Stack;
 public class Access extends JFrame {
     static String[][] billData = new String[1000][4];
     int noOfBillDataRow = 0;
+    static float[] productQuantity = new float[1000];
     Access(){
         this.setDefaultCloseOperation(EXIT_ON_CLOSE);
         this.setLayout(null);
@@ -108,7 +108,7 @@ public class Access extends JFrame {
                         String usernameFromDb = token[0];
                         String passwordFromDb = token[1];
                         if (username.equals(usernameFromDb) && password.equals(passwordFromDb)) {
-//                        JOptionPane.showMessageDialog(signInPanel,"Sucessfully signed in");
+                        JOptionPane.showMessageDialog(signInPanel,"Sucessfully signed in");
                             accessPanel.setVisible(false);
                             dashboardPanel.setVisible(true);
                             usernameField.setText("");
@@ -392,6 +392,7 @@ public class Access extends JFrame {
                             newBillProductQuantityField.getText(),
                             price*quantity
                     });
+                    productQuantity[noOfBillDataRow] = quantity;
                     billData[noOfBillDataRow][0] = (String)newBillProductNameField.getSelectedItem();
                     billData[noOfBillDataRow][1] = Float.toString(price);
                     billData[noOfBillDataRow][2] = newBillProductQuantityField.getText();
@@ -429,6 +430,7 @@ public class Access extends JFrame {
         newBillClearButton.addActionListener(e ->{
             billData = new String[1000][4];
             noOfBillDataRow = 0;
+            productQuantity = new float[1000];
 
             tableModel.setRowCount(0);
             newBillProductQuantityField.setText("");
@@ -451,6 +453,7 @@ public class Access extends JFrame {
 
             billData = new String[1000][4];
             noOfBillDataRow = 0;
+            productQuantity = new float[1000];
 
             tableModel.setRowCount(0);
             newBillProductQuantityField.setText("");
@@ -562,7 +565,7 @@ public class Access extends JFrame {
 //            writing in file
             try {
                 FileWriter myWriter = new FileWriter("products.txt", true);
-                myWriter.write(name + "," + id + "," + price + "," + stock + "\n");
+                myWriter.write(name + "," + id + "," + Float.parseFloat(price) + "," + Float.parseFloat(stock) + "\n");
                 myWriter.close();
                 JOptionPane.showMessageDialog(addProductPanel,"Product added");
 
@@ -1059,17 +1062,8 @@ public class Access extends JFrame {
         aboutTextPane.setFont(new Font("Poppins",Font.PLAIN,14));
         aboutTextPane.setMargin(new Insets(20, 20, 20, 20));
         aboutTextPane.setEditable(false);
-        aboutTextPane.setText("OUR TEAM\n\n" +
-                "AVINASH CHANDRA KARMJIT\n"+
-                "PRAVEEN KUMAR YADAV\n" +
-                "ALOK KUMAR MISHRA\n" +
-                "SK. IMRAN\n" +
-                "MD. SAMA\n" +
-                "AROSHI PATTANAIK\n" +
-                "AKASH KUMAR SAHOO\n" +
-                "AREEB NAWAZ\n" +
-                "SHIVAM RASMI MUDULI\n" +
-                "AYUSH SAHA\n");
+        aboutTextPane.setText("DEVELOPED BY\n\n" +
+                "AVINASH CHANDRA KARMJIT\n");
 //        About end
 
         signOut.setFont(new Font("Poppins",Font.PLAIN,14));
@@ -1280,6 +1274,53 @@ public class Access extends JFrame {
                     exception.printStackTrace();
                 }
 
+//                Updating function
+                try {
+                    File inputFile = new File("products.txt");
+                    if (!inputFile.isFile()) {
+                        System.out.println("File does not exist");
+                        return;
+                    }
+                    File tempFile = new File(inputFile.getAbsolutePath() + ".tmp");
+                    BufferedReader br = new BufferedReader(new FileReader("products.txt"));
+                    PrintWriter pw = new PrintWriter(new FileWriter(tempFile));
+                    String line = null;
+                    //Read from the original file and write to the new
+                    //unless content matches data to be removed.
+                    while ((line = br.readLine()) != null) {
+                        float tempProductQuantity = 0;
+                        String[] token = line.split(",");
+                        for (int i=0;billData[i][0] != null;i++){
+                            if (!billData[i][0].equals("")){
+                                if (billData[i][0].equals(token[0])){
+                                    tempProductQuantity = tempProductQuantity + productQuantity[i];
+                                }
+                            }
+                        }
+                        if (tempProductQuantity > 0){
+                            pw.println(token[0]+","+token[1]+","+token[2]+","+(Float.parseFloat(token[3])-tempProductQuantity));
+                            pw.flush();
+                        }else {
+                            pw.println(line);
+                        }
+                    }
+                    pw.close();
+                    br.close();
+                    //Delete the original file
+                    if (!inputFile.delete()) {
+                        System.out.println("Could not delete file");
+                        return;
+                    }
+                    //Rename the new file to the filename the original file had.
+                    if (!tempFile.renameTo(inputFile))
+                        System.out.println("Could not rename file");
+                }
+                catch (FileNotFoundException ex) {
+                    ex.printStackTrace();
+                }catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+
             }else if (customerNameField.getText().equals("")){
                 JOptionPane.showMessageDialog(frame,"Please enter customer name");
             }else {
@@ -1296,7 +1337,7 @@ public class Access extends JFrame {
         printButton.setRolloverEnabled(false);
         printButton.addActionListener(e ->{
             if (!customerNameField.getText().equals("") && !customerPhNoField.getText().equals("")){
-                //            Saving function
+//              Saving function
 //            File creation
                 try {
                     File myObj = new File("sales.txt");
@@ -1328,6 +1369,54 @@ public class Access extends JFrame {
                 } catch (IOException exception) {
                     JOptionPane.showMessageDialog(frame,"Error saving data");
                     exception.printStackTrace();
+                }
+
+//                Updating function
+                try {
+                    File inputFile = new File("products.txt");
+                    if (!inputFile.isFile()) {
+                        System.out.println("File does not exist");
+                        return;
+                    }
+                    File tempFile = new File(inputFile.getAbsolutePath() + ".tmp");
+                    BufferedReader br = new BufferedReader(new FileReader("products.txt"));
+                    PrintWriter pw = new PrintWriter(new FileWriter(tempFile));
+                    String line = null;
+                    //Read from the original file and write to the new
+                    //unless content matches data to be removed.
+                    while ((line = br.readLine()) != null) {
+                        float tempProductQuantity = 0;
+                        String[] token = line.split(",");
+                        for (int i=0;billData[i][0] != null;i++){
+                            if (!billData[i][0].equals("")){
+                                if (billData[i][0].equals(token[0])){
+                                    tempProductQuantity = tempProductQuantity + productQuantity[i];
+                                }
+                            }
+                        }
+                        if (tempProductQuantity > 0){
+                            pw.println(token[0]+","+token[1]+","+token[2]+","+(Float.parseFloat(token[3])-tempProductQuantity));
+                            pw.flush();
+                        }else {
+                            pw.println(line);
+                        }
+                    }
+                    pw.close();
+                    br.close();
+                    //Delete the original file
+                    if (!inputFile.delete()) {
+                        System.out.println("Could not delete file");
+                        return;
+                    }
+                    //Rename the new file to the filename the original file had.
+                    if (!tempFile.renameTo(inputFile))
+                        System.out.println("Could not rename file");
+
+                }
+                catch (FileNotFoundException ex) {
+                    ex.printStackTrace();
+                }catch (IOException ex) {
+                    ex.printStackTrace();
                 }
 
 //            Printing function
