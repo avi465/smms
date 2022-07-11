@@ -1063,7 +1063,7 @@ public class Access extends JFrame {
         aboutTextPane.setMargin(new Insets(20, 20, 20, 20));
         aboutTextPane.setEditable(false);
         aboutTextPane.setText("DEVELOPED BY\n\n" +
-                "AVINASH CHANDRA KARMJIT\n");
+                "AVINASH KARMJIT\n");
 //        About end
 
         signOut.setFont(new Font("Poppins",Font.PLAIN,14));
